@@ -12,7 +12,7 @@ st.set_page_config(
 
 st.title("⚛️ Дигитален Двойник на ВХР — Блок 5, АЕЦ Козлодуй")
 
-# Инициализация на състоянието на слайдерите (Ако не са инициализирани)
+# Инициализация на състоянието на слайдерите (ако все още не са в сесията)
 if 'temp_val' not in st.session_state:
     st.session_state.temp_val = 301.0
 if 'h3bo3_val' not in st.session_state:
@@ -29,22 +29,16 @@ if 'eta_val' not in st.session_state:
     st.session_state.eta_val = 1.8
 if 'leak_val' not in st.session_state:
     st.session_state.leak_val = 0.0
-if 'user_choice' not in st.session_state:
-    st.session_state.user_choice = None
 
-# Функция за автоматично нулиране/коригиране на слайдерите
+# Функция за автоматично коригиране на слайдерите
 def apply_auto_fix():
     st.session_state.k_val = 12.0
     st.session_state.nh3_val = 18.0
     st.session_state.h2_val = 45.0
     st.session_state.o2_val = 0.0
     st.session_state.leak_val = 0.0
-    st.session_state.user_choice = "fixed"
 
-def set_manual_choice():
-    st.session_state.user_choice = "manual"
-
-# Странично меню за избор на 2-та основни модула
+# Странично меню за избор на основните модули
 st.sidebar.title("🕹️ Главно меню")
 module = st.sidebar.radio(
     "Изберете модул:",
@@ -61,7 +55,7 @@ if module == "1. Оперативен мониторинг & Управлени�
     st.header("📊 1. Интегриран оперативен мониторинг & Управление")
     st.caption("Симулиране и управление на водно-химичния режим за Първи и Втори контур (ВВЕР-1000)")
 
-    # СТРАНИЧЕН ПАНЕЛ ЗА УПРАВЛЕНИЕ С ДИНАМИЧНО СЪСТОЯНИЕ
+    # СТРАНИЧЕН ПАНЕЛ ЗА УПРАВЛЕНИЕ
     st.sidebar.markdown("---")
     st.sidebar.subheader("🎛️ Параметри за управление (Първи контур)")
     
@@ -135,16 +129,14 @@ if module == "1. Оперативен мониторинг & Управлени�
     if has_issue:
         st.warning("⚠️ Открити са отклонения от нормалния водно-химичен режим!")
         
-        # БУТОНИ С Callback ФУНКЦИИ
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
             st.button("🤖 Да -> Коригирай автоматично нужните реагенти", on_click=apply_auto_fix)
         with col_btn2:
-            st.button("❌ Не -> Остави за ръчна интервенция (Препоръка)", on_click=set_manual_choice)
+            st.button("❌ Не -> Остави за ръчна интервенция (Препоръка)")
 
         st.markdown("---")
 
-        # АКО ПОТРЕБИТЕЛЯТ Е ИЗБРАЛ РЪЧНА ИНТЕРВЕНЦИЯ ИЛИ ВСЕ ОЩЕ НЕ Е ИЗБРАЛ
         if is_emergency_scram:
             st.error("🚨🚨🚨 АВАРИЕН СИНАЛ: ПРЕВИШЕНА ГРАНИЦА НА РАЗТВОРИМОСТ НА ВОДОРОДА (H2 > 100 Ncm³/kg)!")
             st.markdown(f"""
@@ -178,7 +170,7 @@ if module == "1. Оперативен мониторинг & Управлени�
             st.markdown(f"""
             * **📍 Локализация:** Първи контур.
             * **🔍 Причина:** Небалансирано съотношение между H3BO3 (`{h3bo3} g/kg`) и K+ (`{k_mg} mg/dm³`).
-            * **⚠️ Риск при забавяне:** Пренасяне на корозионни продукты върху ТВЕЛ-ите (CRUD отлагания).
+            * **⚠️ Риск при забавяне:** Пренасяне на корозионни продукти върху ТВЕЛ-ите (CRUD отлагания).
             * **🛠️ Препоръка към химик-инженера:** Коригирайте Калиевата основа (KOH), за да достигнете pH_T = 7.10 - 7.20.
             """)
     else:
