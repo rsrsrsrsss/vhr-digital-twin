@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 
 # Настройка на страницата
 st.set_page_config(
@@ -12,9 +11,11 @@ st.set_page_config(
 )
 
 st.title("⚛️ Интерактивен Дигитален Двойник на ВХР — Блок 5, АЕЦ Козлодуй")
-st.caption("Симулатор за оперативен мониторинг, динамична схема на съоръженията и корозионни изпитания")
+st.caption("Симулатор за оперативен мониторинг, динамична диагностика и корозионни изпитания")
 
-# Инициализация на състоянието на слайдерите
+# ---------------------------------------------------------
+# Инициализация на състоянието на слайдерите (Сесийни променливи)
+# ---------------------------------------------------------
 if 'temp_val' not in st.session_state:
     st.session_state.temp_val = 301.0
 if 'h3bo3_val' not in st.session_state:
@@ -32,7 +33,7 @@ if 'eta_val' not in st.session_state:
 if 'leak_val' not in st.session_state:
     st.session_state.leak_val = 0.0
 
-# Функция за пълно автоматично възстановяване
+# Функция за пълно автоматично възстановяване на Модул 1
 def apply_auto_fix():
     st.session_state.temp_val = 301.0
     st.session_state.h3bo3_val = 3.5
@@ -48,16 +49,16 @@ st.sidebar.title("🕹️ Избор на модул")
 module = st.sidebar.radio(
     "Преминаване към:",
     [
-        "1. Интерактивна Карта & Двойник на Блок 5",
+        "1. Оперативен Мониторинг & Диагностика на Блок 5",
         "2. Лаборатория за корозионни изпитания & Пасивация"
     ]
 )
 
 # ==========================================================
-# МОДУЛ 1: ДВОЙНИК НА БЛОК 5 И ДИНАМИЧНА СХЕМА
+# МОДУЛ 1: ОПЕРАТИВЕН МОНИТОРИНГ И ДИАГНОСТИКА
 # ==========================================================
-if module == "1. Интерактивна Карта & Двойник на Блок 5":
-    st.header("📊 Интерактивна схематична карта на Блок 5 (ВВЕР-1000)")
+if module == "1. Оперативен Мониторинг & Диагностика на Блок 5":
+    st.header("📊 Мониторинг на параметрите на ВХР и контрол на отклоненията")
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("🎛️ Симулиране на ситуации (Първи контур)")
@@ -73,98 +74,11 @@ if module == "1. Интерактивна Карта & Двойник на Бл�
     eta_ppm = st.sidebar.slider("Дозиране на ЕТА (mg/dm³)", 0.0, 5.0, key="eta_val", step=0.1)
     cond_leak = st.sidebar.slider("Приток в кондензатора (L/h)", 0.0, 5.0, key="leak_val", step=0.1)
 
-    # Точни изчисления
+    # Физикохимични изчисления
     ph_25_p1 = 7.0 + 0.12 * k_mg - 0.08 * h3bo3
     ph_t_p1 = ph_25_p1 - (primary_temp - 25.0) * 0.0072
     effective_o2 = max(0.0, o2_input - (h2_input / 10.0))
-
-    # Статуси за съоръженията
     is_emergency_scram = h2_input > 100.0
-    
-    # Цветове за съоръженията
-    # Реактор
-    reactor_color = "red" if is_emergency_scram else ("yellow" if (ph_t_p1 < 7.0 or ph_t_p1 > 7.3) else "green")
-    # Компенсатор на обема
-    pressurizer_color = "red" if is_emergency_scram else "green"
-    # ГЦП
-    gcp_color = "red" if is_emergency_scram else "green"
-    # Парогенератор
-    pg_color = "yellow" if (effective_o2 > 5.0 or cond_leak > 0.2) else "green"
-    # Турбина
-    turbine_color = "yellow" if is_emergency_scram else "green"
-    # Кондензатор
-    condenser_color = "red" if cond_leak > 0.2 else "green"
-
-    # СРАЗУВАНЕ НА ИНТЕРАКТИВНАТА ТЕХНОЛОГИЧНА СХЕМА С PLOTLY
-    fig_map = go.Figure()
-
-    # Външни граници (Зони/Контури)
-    fig_map.add_shape(type="rect", x0=0.5, y0=0.5, x1=4.5, y1=3.5,
-                      line=dict(color="Gray", width=2, dash="dash"),
-                      fillcolor="rgba(220, 220, 220, 0.15)")
-    fig_map.add_annotation(x=2.5, y=3.3, text="<b>ПЪРВИ КОНТУР (ХЕРМОЗОНА)</b>", showarrow=False, font=dict(size=14, color="gray"))
-
-    fig_map.add_shape(type="rect", x0=4.8, y0=0.5, x1=8.5, y1=3.5,
-                      line=dict(color="Gray", width=2, dash="dash"),
-                      fillcolor="rgba(240, 240, 240, 0.15)")
-    fig_map.add_annotation(x=6.6, y=3.3, text="<b>ВТОРИ КОНТУР (МАШИННА ТАБЛИЦА)</b>", showarrow=False, font=dict(size=14, color="gray"))
-
-    # БЛОКОВЕ НА СЪОРЪЖЕНИЯТА
-    nodes = [
-        {"name": "РЕАКТОР<br>(ВВЕР-1000)", "x": 1.2, "y": 1.5, "color": reactor_color, "status": f"pH_T: {ph_t_p1:.2f}<br>H2: {h2_input:.1f}"},
-        {"name": "КОМПЕНСАТОР<br>НА ОБЕМА", "x": 1.2, "y": 2.6, "color": pressurizer_color, "status": "Парна възглавница"},
-        {"name": "ГЛАВНА ЦИРК.<br>ПОМПА (ГЦП)", "x": 2.5, "y": 0.9, "color": gcp_color, "status": "Циркулация 1-ви контур"},
-        {"name": "ПАРОГЕНЕРАТОР<br>(ПГ-1000)", "x": 3.8, "y": 1.8, "color": pg_color, "status": f"O2: {effective_o2:.1f} ppb"},
-        {"name": "ПАРОТУРБИНА<br>(К-1000-60)", "x": 5.6, "y": 2.2, "color": turbine_color, "status": "Пароподаване"},
-        {"name": "КОНДЕНЗАТОР", "x": 7.2, "y": 1.2, "color": condenser_color, "status": f"Приток: {cond_leak} L/h"},
-    ]
-
-    # Изобразяване на съоръженията като правоъгълници
-    color_map = {"green": "#2ecc71", "yellow": "#f1c40f", "red": "#e74c3c"}
-    
-    for n in nodes:
-        fig_map.add_trace(go.Scatter(
-            x=[n["x"]], y=[n["y"]],
-            mode="markers+text",
-            marker=dict(size=60, color=color_map[n["color"]], symbol="square", line=dict(width=3, color="black")),
-            text=[f"<b>{n['name']}</b>"],
-            textposition="middle center",
-            hoverinfo="text",
-            hovertext=f"<b>{n['name']}</b><br>Статус: {n['status']}",
-            showlegend=False
-        ))
-
-    # СВЪРЗВАЩИ ТРЪБОПРОВОДИ (ЛИНИИ)
-    pipes = [
-        # 1-ви контур: Реактор -> ПГ -> ГЦП -> Реактор
-        ([1.2, 3.8], [1.8, 1.8], "red"),  # Гореща нишка
-        ([3.8, 2.5, 1.2], [1.2, 0.9, 1.2], "blue"), # Студена нишка през ГЦП
-        ([1.2, 1.2], [1.8, 2.3], "orange"), # Връзка Реактор - Компенсатор
-        # 2-ри контур: ПГ -> Турбина -> Кондензатор -> ПГ
-        ([3.8, 5.6], [2.2, 2.2], "maroon"), # Свежа пара
-        ([5.6, 7.2], [1.8, 1.6], "purple"), # Отработена пара
-        ([7.2, 3.8], [0.8, 1.4], "cyan")  # Питателна вода
-    ]
-
-    for px_vals, py_vals, pcolor in pipes:
-        fig_map.add_trace(go.Scatter(
-            x=px_vals, y=py_vals,
-            mode="lines",
-            line=dict(color=pcolor, width=4),
-            hoverinfo="none",
-            showlegend=False
-        ))
-
-    fig_map.update_layout(
-        title="<b>🕹️ Технологична схема на Блок 5 с визуализация на състоянието в реално време</b>",
-        xaxis=dict(range=[0, 9], showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(range=[0, 4], showgrid=False, zeroline=False, showticklabels=False),
-        height=420,
-        margin=dict(l=10, r=10, t=40, b=10),
-        plot_bgcolor="#f9f9f9"
-    )
-
-    st.plotly_chart(fig_map, use_container_width=True)
 
     # Основни метрики
     power_mw = "0 MWth" if is_emergency_scram else "3000 MWth"
@@ -178,14 +92,28 @@ if module == "1. Интерактивна Карта & Двойник на Бл�
 
     st.markdown("---")
 
-    # ДИАГНОСТИКА НА СИТУАЦИИ И АВТОМАТИЧНИ ПРЕПОРЪКИ
-    st.subheader("📋 Система за диагностика и препоръки в реално време")
+    # Контролна графика за pH_T
+    st.subheader("📈 Контролна графика за отклонения от Технологичния регламент")
+    hours = [f"{h:02d}:00" for h in range(24)]
+    ph_min_limit = [7.00] * 24
+    ph_max_limit = [7.30] * 24
+    ph_trend = list(7.15 + 0.05 * np.sin(np.linspace(0, 5, 23))) + [ph_t_p1]
 
+    fig_reg = go.Figure()
+    fig_reg.add_trace(go.Scatter(x=hours, y=ph_trend, mode='lines+markers', name='pH_T (Текущо)', line=dict(color='#2980b9', width=3)))
+    fig_reg.add_trace(go.Scatter(x=hours, y=ph_min_limit, mode='lines', name='Мин. праг (7.00)', line=dict(color='#e74c3c', width=2, dash='dash')))
+    fig_reg.add_trace(go.Scatter(x=hours, y=ph_max_limit, mode='lines', name='Макс. праг (7.30)', line=dict(color='#e74c3c', width=2, dash='dash')))
+    fig_reg.update_layout(title="Динамика на pH_T за 24 часа", xaxis_title="Време", yaxis_title="pH_T", yaxis=dict(range=[6.5, 7.8]), height=380, plot_bgcolor="#ffffff")
+    st.plotly_chart(fig_reg, use_container_width=True)
+
+    st.markdown("---")
+
+    # Диагностика и автоматични препоръки
+    st.subheader("📋 Система за диагностика и препоръки в реално време")
     has_issue = is_emergency_scram or (cond_leak > 0.2) or (effective_o2 > 5.0) or (ph_t_p1 < 7.00 or ph_t_p1 > 7.30)
 
     if has_issue:
         st.error("⚠️ РЕГИСТРИРАНО ОТКЛОНЕНИЕ ОТ ВХР!")
-        
         col_b1, col_b2 = st.columns(2)
         with col_b1:
             st.button("🤖 Автоматично възстановяване на оптимален ВХР", on_click=apply_auto_fix)
@@ -197,122 +125,225 @@ if module == "1. Интерактивна Карта & Двойник на Бл�
         if is_emergency_scram:
             st.error("🚨🚨🚨 АВАРИЕН СИНАЛ: ПРЕВИШЕНА ГРАНИЦА НА РАЗТВОРИМОСТ НА ВОДОРОДА (H2 > 100 Ncm³/kg)!")
             st.markdown(f"""
-            * **📍 Локализация:** РЕАКТОР / ГЦП (Червени съоръжения на схемата).
-            * **🔍 Причина:** Неконтролирано повишаване на $H_2$ (`{h2_input:.1f} Ncm³/kg`), надвишаващо предела на разтворимост при работна температура.
-            * **💥 Риск:** Образуване на свободна газова възглавница, риск от кавитация на ГЦП и нарушено охлаждане на активната зона.
-            * **⚡ Действие на защитите:** Сработила Аварийна защита на реактора (ААЗ)!
+            * **🔍 Причина:** Неконтролирано повишаване на $H_2$ (`{h2_input:.1f} Ncm³/kg`).
+            * **💥 Риск:** Образуване на свободна газова възглавница и риск от кавитация на ГЦП.
             * **🛠️ Препоръка към оператора:** Намалете дозирането на $H_2$ под $60\\text{{ Ncm}}^3/\\text{{kg}}$ и извършете продухване.
             """)
 
         if cond_leak > 0.2:
             st.error("🚨 ВНИМАНИЕ: Приток на сурова/охладителна вода в кондензатора!")
             st.markdown(f"""
-            * **📍 Локализация:** КОНДЕНЗАТОР / ПАРОГЕНЕРАТОР (Червен / Жълт блок).
             * **🔍 Причина:** Пробив в тръбната система на кондензатора (Дебит: `{cond_leak} L/h`).
-            * **💥 Риск:** Внасяне на твърдост и хлориди $\\rightarrow$ интензивна питингова корозия по тръбичките на ПГ.
-            * **🛠️ Препоръка към оператора:** Увеличете дозата на ЕТА, форсирайте продухването на ПГ и подгответе задействане на БОВ.
+            * **💥 Риск:** Внасяне на твърдост и хлориди $\\rightarrow$ питингова корозия по ПГ.
+            * **🛠️ Препоръка към оператора:** Увеличете дозата на ЕТА, форсирайте продухването на ПГ и задействайте БОВ.
             """)
 
         if effective_o2 > 5.0 and not is_emergency_scram:
-            st.warning("⚠️ ПРЕДУПРЕЖДЕНИЕ: Повишен разтворен Кислород (O2) в Първи контур!")
+            st.warning("⚠️ ПРЕДУПРЕПРЕЖДЕНИЕ: Повишен разтворен Кислород (O2)!")
             st.markdown(f"""
-            * **📍 Локализация:** ПАРОГЕНЕРАТОР / РЕАКТОР.
-            * **🔍 Причина:** Недостатъчен водороден покрив (`H2 = {h2_input:.1f} Ncm³/kg`) за радиолитично свързване на $O_2$.
-            * **💥 Риск:** Корозионно напукване под напрежение (SCC) на аустенитните стомани 08Х18Н10Т.
-            * **🛠️ Препоръка към оператора:** Увеличете дозирането на Амоняк ($NH_3$) или директния Водород ($H_2$).
+            * **🔍 Причина:** Недостатъчен водороден покрив (`H2 = {h2_input:.1f} Ncm³/kg`).
+            * **💥 Риск:** Корозионно напукване под напрежение (SCC) на аустенитната стомана.
+            * **🛠️ Препоръка към оператора:** Увеличете дозирането на $NH_3$ или $H_2$.
             """)
 
         if (ph_t_p1 < 7.00 or ph_t_p1 > 7.30) and not is_emergency_scram:
-            st.warning("⚠️ ПРЕДУПРЕЖДЕНИЕ: Отклонение от Борно-Калиевия координационен график!")
+            st.warning("⚠️ ПРЕДУПРЕЖДЕНИЕ: Отклонение от Борно-Калиевия график!")
             st.markdown(f"""
-            * **📍 Локализация:** РЕАКТОР / Активна зона.
-            * **🔍 Причина:** Несъответствие между концентрацията на Борна киселина (`{h3bo3} g/kg`) и Калий (`{k_mg} mg/dm³`).
-            * **💥 Риск:** Пренасяне на корозионни продукти и образуване на CRUD отлагания по обвивките на ТВЕЛ-ите.
-            * **🛠️ Препоръка към оператора:** Коригирайте съдържанието на $KOH$, за да поддържате $pH_T$ в границите $7.10 - 7.20$.
+            * **🔍 Причина:** Несъответствие между Борна киселина (`{h3bo3} g/kg`) и Калий (`{k_mg} mg/dm³`).
+            * **💥 Риск:** Образуване на CRUD отлагания по обвивките на ТВЕЛ-ите.
+            * **🛠️ Препоръка към оператора:** Коригирайте $KOH$, за да поддържате $pH_T$ в границите $7.10 - 7.20$.
             """)
     else:
-        st.success("✅ Всички съоръжения на схемата са в ЗЕЛЕН СТАТУС. Параметрите спазват Технологичния регламент на Блок 5.")
+        st.success("✅ Всички параметри са в ЗЕЛЕН СТАТУС. Спазва се Технологичният регламент на Блок 5.")
 
 # ==========================================================
-# МОДУЛ 2: КОРОЗИОНЕН СИМУЛАТОР & ПАСИВАЦИЯ
+# МОДУЛ 2: ЛАБОРАТОРИЯ ЗА КОРОЗИОННИ ИЗПИТАНИЯ & ПАСИВАЦИЯ (ПЪЛНИ ПОДОБРЕНИЯ)
 # ==========================================================
 elif module == "2. Лаборатория за корозионни изпитания & Пасивация":
-    st.header("🔬 Модул 2: Лаборатория за изпитания на метали и пасивация")
-    st.caption("Оценка на корозионната устойчивост на конструкционни материали от ВВЕР-1000")
+    st.header("🔬 Модул 2: Разширена лаборатория за корозия, пасивация и ресурсен анализ")
+    st.caption("Физикохимичен симулатор за устойчивост на конструкционни материали от ВВЕР-1000")
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
+    # --- 1. Избор на материал и компонент ---
+    st.subheader("⚙️ 1. Конструкционен материал и компонент")
+    col_m1, col_m2, col_m3 = st.columns(3)
+    
+    with col_m1:
         metal = st.selectbox(
-            "Изберете конструкционен метал / сплав:",
+            "Избор на сплав:",
             [
                 "Аустенитна стомана 08Х18Н10Т (Първи контур / ПГ)",
-                "Въглеродна стомана 20К / 16ГС (Втори контур)",
-                "Никелова сплав Инконел-690 (Тръбички ПГ)"
+                "Въглеродна стомана 20К / 16ГС (Втори контур / Тръбопроводи)",
+                "Никелова сплав Инконел-690 (Тръбички ПГ - Модернизирани)",
+                "Циркониева сплав Э110 / Э635 (Обвивки на ТВЕЛ)"
             ]
         )
-    with c2:
+    with col_m2:
         fluid = st.selectbox(
-            "Агрегатно състояние на средата:",
+            "Хидродинамичен режим:",
             [
-                "💧 Водна фаза (Течна)",
-                "🌫️ Паро-газова фаза (Суха пара)",
-                "🫧 Двуфазен поток (Вода + Пара / Влажна пара)"
+                "💧 Еднофазен воден поток (Ламинарен)",
+                "🌊 Турбулентен воден поток (V > 3 m/s)",
+                "🌫️ Прегрята / Суха пара",
+                "🫧 Двуфазен поток (Влажна пара / FAC риск)"
             ]
         )
-    with c3:
-        work_temp = st.slider("Температура на изпитанието (°C)", 25.0, 350.0, 280.0, 5.0)
+    with col_m3:
+        work_temp = st.slider("Работна температура T (°C)", 25.0, 350.0, 280.0, 5.0)
 
-    st.markdown("### 🧪 Входни химически параметри на средата")
-    fc1, fc2, fc3 = st.columns(3)
-    ph_val = fc1.slider("pH на водната среда", 4.0, 11.0, 9.2, 0.1)
-    o2_conc = fc2.number_input("Концентрация на O2 (ppb)", 0, 500, 10)
-    cl_conc = fc3.number_input("Концентрация на Хлориди Cl- (ppb)", 0, 1000, 5)
+    # --- 2. Физикохимичен състав на средата ---
+    st.markdown("### 🧪 2. Химичен състав на водната среда")
+    fc1, fc2, fc3, fc4, fc5 = st.columns(5)
+    ph_val = fc1.slider("pH (при 25°C)", 4.0, 11.5, 9.2, 0.1)
+    o2_conc = fc2.number_input("Разтворен O2 (ppb)", 0, 500, 5)
+    cl_conc = fc3.number_input("Хлориди Cl- (ppb)", 0, 1000, 2)
+    so4_conc = fc4.number_input("Сулфати SO4(2-) (ppb)", 0, 1000, 5)
+    h2_conc = fc5.number_input("Разтворен H2 (Ncm³/kg)", 0, 100, 45)
 
-    # Симулационни модели за корозия
+    # --- Алгоритъм за изчисление на корозионното поведение ---
+    corrosion_mechanism = []
+    initial_wall_thickness = 1.5 # mm (проектна дебелина)
+
     if "Въглеродна" in metal:
-        base_rate = 0.04 * np.exp((work_temp - 100)/100)
+        initial_wall_thickness = 8.0 # mm за тръбопровод
+        base_rate = 0.025 * np.exp((work_temp - 100) / 110)
+        
+        # pH ефект върху разтворимостта на магнетита
         if ph_val < 9.0:
-            base_rate *= 2.8
-        if fluid == "🫧 Двуфазен поток (Вода + Пара / Влажна пара)":
-            base_rate *= 3.5  # Ерозионно-корозионно износване (FAC)
-            
-        if ph_val >= 9.2 and o2_conc < 20 and "Двуфазен" not in fluid:
+            base_rate *= (9.2 / ph_val) ** 3.0
+            corrosion_mechanism.append("Интензивно киселинно разтваряне на магнетита")
+        elif ph_val > 10.0:
+            base_rate *= 1.2
+            corrosion_mechanism.append("Алкална корозия при високи концентрации")
+
+        # FAC (Ерозийна корозия)
+        if "Двуфазен" in fluid or "Турбулентен" in fluid:
+            fac_factor = 4.2 if "Двуфазен" in fluid else 2.3
+            base_rate *= fac_factor
+            corrosion_mechanism.append("Ерозионно-корозионно износване (FAC / Flow-Accelerated Corrosion)")
+
+        if o2_conc > 30:
+            base_rate *= (1.0 + o2_conc / 40.0)
+            corrosion_mechanism.append("Кислородна деполяризация и язвено износване")
+
+        if ph_val >= 9.2 and ph_val <= 9.8 and o2_conc <= 20 and "Двуфазен" not in fluid:
             passivated = True
-            film_type = "Магнетитен защитен филм (Fe3O4)"
+            film_type = "Стабилен магнетитен защитен филм (Fe₃O₄)"
+            film_stability = max(10, min(100, int(98 - (9.5 - ph_val)**2 * 40 - (work_temp - 280)*0.1)))
         else:
             passivated = False
-            film_type = "Няма стабилен филм (Активно разтваряне / FAC)"
+            film_type = "Ронлив / Порест / Нестабилен магнетит"
+            film_stability = max(5, int(45 - abs(9.5 - ph_val)*20 - (o2_conc/10)))
 
     elif "Аустенитна" in metal:
-        base_rate = 0.002 * np.exp((work_temp - 100)/200)
-        if cl_conc > 100 and work_temp > 150:
-            base_rate *= 5.0
+        initial_wall_thickness = 1.5 # mm за тръбички на ПГ
+        base_rate = 0.0012 * np.exp((work_temp - 100) / 200)
         
-        passivated = True
-        film_type = "Хромов оксиден пасивационен слой (Cr2O3)"
+        # Питтинг и SCC (Напукване)
+        if (cl_conc > 30 or so4_conc > 50) and o2_conc > 10 and work_temp > 140:
+            pitting_factor = 1.0 + (cl_conc / 30.0) * (o2_conc / 10.0) * 0.5 + (so4_conc / 50.0) * 0.3
+            base_rate *= pitting_factor
+            corrosion_mechanism.append("Питингова корозия и висок риск от Корозионно напукване под напрежение (SCC)")
 
-    else: # Инконел 690
-        base_rate = 0.0008 * np.exp((work_temp - 100)/250)
-        passivated = True
-        film_type = "Високоустойчив Никелово-Хромов пасивационен филм"
+        if h2_conc >= 30:
+            base_rate *= 0.65
+            corrosion_mechanism.append("Водородно инхибиране на радиолитичната окислителна среда")
 
+        passivated = True
+        film_type = "Плътен хромов оксиден слой (Cr₂O₃ / Fe-Cr Шпинел)"
+        film_stability = max(15, min(100, int(99 - (cl_conc / 15) - (so4_conc / 25) - (o2_conc / 5))))
+
+    elif "Инконел-690" in metal:
+        initial_wall_thickness = 1.5 # mm
+        base_rate = 0.0003 * np.exp((work_temp - 100) / 250)
+        if cl_conc > 200:
+            base_rate *= 1.3
+            corrosion_mechanism.append("Локално микро-износване при екстремни хлориди")
+
+        passivated = True
+        film_type = "Високостабилен Никел-Хромов шпинел (Ni-Cr Spinel)"
+        film_stability = max(50, min(100, int(100 - (cl_conc / 40))))
+
+    else: # Цирконий Э110
+        initial_wall_thickness = 0.65 # mm (обвивка ТВЕЛ)
+        base_rate = 0.0008 * np.exp((work_temp - 200) / 100)
+        if work_temp > 330:
+            base_rate *= 2.5
+            corrosion_mechanism.append("Ускорена Нодуларна корозия при висока температура")
+        if h2_conc > 60:
+            corrosion_mechanism.append("Риск от Водородна трошливост (Образуване на хидриди)")
+
+        passivated = True
+        film_type = "Моноклинен циркониев диоксид (ZrO₂)"
+        film_stability = max(20, min(100, int(95 - (work_temp - 300)*0.5)))
+
+    if not corrosion_mechanism:
+        corrosion_mechanism.append("Равномерна (пасивна) корозия в нормирани граници")
+
+    # Ресурсен изчислетелен модул
+    allowable_thinning = initial_wall_thickness * 0.20 # 20% марж на сигурност
+    estimated_lifespan_years = allowable_thinning / max(base_rate, 1e-6)
+
+    # --- 3. Резултати от симулацията ---
     st.markdown("---")
-    st.subheader("📊 Резултати от изпитването")
+    st.subheader("📊 3. Резултати и оценка на състоянието")
 
-    r1, r2, r3 = st.columns(3)
+    r1, r2, r3, r4 = st.columns(4)
     r1.metric("Скорост на корозия", f"{base_rate:.4f} mm/година")
     
-    if passivated:
-        r2.success("🛡️ СТАТУС: МЕТАЛЪТ Е ПАСИВИРАН")
+    if passivated and film_stability > 70:
+        r2.success("🛡️ ПАСИВИРАН СТАТУС")
+    elif passivated:
+        r2.warning("⚠️ УЯЗВИМ ПАСИВЕН СЛОЙ")
     else:
-        r2.error("💥 СТАТУС: АКТИВНА КОРОЗИЯ / FAC")
+        r2.error("💥 АКТИВНА КОРОЗИЯ / FAC")
 
-    r3.info(f"🔬 Пасивационен слой: {film_type}")
+    r3.metric("Стабилност на филма", f"{film_stability}%")
+    r4.metric("Прогнозен остатъчен ресурс", f"{estimated_lifespan_years:.1f} години", f"При проектна дебелина {initial_wall_thickness} mm")
 
-    st.markdown("### 🔍 Физикохимична диагноза:")
-    if not passivated and "Въглеродна" in metal:
-        st.error("⚠️ **Висок риск от Ерозионно-корозионно износване (FAC)!** Защитният магнетитен слой ($Fe_3O_4$) се разтваря интензивно поради ниското pH или турбулентния двуфазен поток.")
-    elif "Аустенитна" in metal and cl_conc > 100:
-        st.warning("⚠️ **Риск от питинг и Корозионно напукване под напрежение (SCC)!** Наличието на хлориди над 100 ppb при висока температура разрушава локално $Cr_2O_3$ слоя.")
-    else:
-        st.success("✅ **Отлична корозионна устойчивост.** Металът формира стабилен защитен филм и запазва целостта си при избраните работни условия.")
+    st.markdown(f"**Характеристика на получения повърхностен слой:** `{film_type}`")
+
+    # Диагностичен панел
+    st.markdown("#### 🔍 Регистрирани физикохимични механизми:")
+    for mech in corrosion_mechanism:
+        if "FAC" in mech or "SCC" in mech or "киселинно" in mech or "Нодуларна" in mech:
+            st.error(f"🚨 **Критичен риск:** {mech}")
+        elif "инхибиране" in mech or "Стабилен" in mech:
+            st.success(f"✅ **Защитен фактор:** {mech}")
+        else:
+            st.info(f"ℹ️ **Режим:** {mech}")
+
+    # --- 4. Интерактивни графики (Температура & pH) ---
+    st.markdown("---")
+    st.subheader("📈 4. Графичен лабораторен анализ")
+
+    graph_tab1, graph_tab2 = st.tabs(["Температурна зависимост", "pH зависимост (Разтворимост)"])
+
+    with graph_tab1:
+        temp_range = np.linspace(25, 350, 60)
+        if "Въглеродна" in metal:
+            rates_t = [0.025 * np.exp((t - 100) / 110) * (4.2 if "Двуфазен" in fluid else 1.0) * ((9.2/ph_val)**3.0 if ph_val<9.0 else 1.0) for t in temp_range]
+        elif "Аустенитна" in metal:
+            rates_t = [0.0012 * np.exp((t - 100) / 200) * (1.0 + (cl_conc/30)*(o2_conc/10)*0.5 if cl_conc>30 and o2_conc>10 and t>140 else 1.0) for t in temp_range]
+        elif "Инконел-690" in metal:
+            rates_t = [0.0003 * np.exp((t - 100) / 250) for t in temp_range]
+        else:
+            rates_t = [0.0008 * np.exp((t - 200) / 100) * (2.5 if t > 330 else 1.0) for t in temp_range]
+
+        fig_temp = go.Figure()
+        fig_temp.add_trace(go.Scatter(x=temp_range, y=rates_t, mode='lines', name='Скорост на корозия (mm/година)', line=dict(color='#e74c3c', width=3)))
+        fig_temp.add_trace(go.Scatter(x=[work_temp], y=[base_rate], mode='markers', name='Текуща работна точка', marker=dict(size=14, color='#2ecc71', symbol='diamond')))
+        fig_temp.update_layout(title="Скорост на корозия спрямо Работната температура (°C)", xaxis_title="Температура T (°C)", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
+        st.plotly_chart(fig_temp, use_container_width=True)
+
+    with graph_tab2:
+        ph_range = np.linspace(4.0, 11.5, 60)
+        if "Въглеродна" in metal:
+            rates_ph = [base_rate * ((9.2/p)**3.0 if p < 9.0 else (1.0 + (p-9.5)**2 * 0.15)) for p in ph_range]
+        else:
+            rates_ph = [base_rate * (1.0 + abs(7.0 - p)*0.1) for p in ph_range]
+
+        fig_ph = go.Figure()
+        fig_ph.add_trace(go.Scatter(x=ph_range, y=rates_ph, mode='lines', name='Скорост на корозия (mm/година)', line=dict(color='#8e44ad', width=3)))
+        fig_ph.add_trace(go.Scatter(x=[ph_val], y=[base_rate], mode='markers', name='Текущо pH', marker=dict(size=14, color='#f1c40f', symbol='star')))
+        fig_ph.update_layout(title="Крива на разтворимост и скорост на корозия спрямо pH (при 25°C)", xaxis_title="pH", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
+        st.plotly_chart(fig_ph, use_container_width=True)
