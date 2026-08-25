@@ -73,7 +73,6 @@ if module == "1. Оперативен Мониторинг & Диагности�
     eta_ppm = st.sidebar.slider("Дозиране на ЕТА (mg/dm³)", 0.0, 5.0, key="eta_val", step=0.1)
     cond_leak = st.sidebar.slider("Приток в кондензатора (L/h)", 0.0, 5.0, key="leak_val", step=0.1)
 
-    # Физикохимични изчисления
     ph_25_p1 = 7.0 + 0.12 * k_mg - 0.08 * h3bo3
     ph_t_p1 = ph_25_p1 - (primary_temp - 25.0) * 0.0072
     effective_o2 = max(0.0, o2_input - (h2_input / 10.0))
@@ -89,7 +88,6 @@ if module == "1. Оперативен Мониторинг & Диагности�
     m4.metric("Разтворен O2 (Първи контур)", f"{effective_o2:.1f} ppb", "Критично!" if effective_o2 > 5.0 else "✅ < 5 ppb")
 
     st.markdown("---")
-
     st.subheader("📈 Контролна графика за отклонения от Технологичния регламент")
     hours = [f"{h:02d}:00" for h in range(24)]
     ph_min_limit = [7.00] * 24
@@ -104,7 +102,6 @@ if module == "1. Оперативен Мониторинг & Диагности�
     st.plotly_chart(fig_reg, use_container_width=True)
 
     st.markdown("---")
-
     st.subheader("📋 Система за диагностика и препоръки в реално време")
     has_issue = is_emergency_scram or (cond_leak > 0.2) or (effective_o2 > 5.0) or (ph_t_p1 < 7.00 or ph_t_p1 > 7.30)
 
@@ -120,44 +117,21 @@ if module == "1. Оперативен Мониторинг & Диагности�
 
         if is_emergency_scram:
             st.error("🚨🚨🚨 АВАРИЕН СИНАЛ: ПРЕВИШЕНА ГРАНИЦА НА РАЗТВОРИМОСТ НА ВОДОРОДА (H2 > 100 Ncm³/kg)!")
-            st.markdown(f"""
-            * **🔍 Причина:** Неконтролирано повишаване на $H_2$ (`{h2_input:.1f} Ncm³/kg`).
-            * **💥 Риск:** Образуване на свободна газова възглавница и риск от кавитация на ГЦП.
-            * **🛠️ Препоръка към оператора:** Намалете дозирането на $H_2$ под $60\\text{{ Ncm}}^3/\\text{{kg}}$ и извършете продухване.
-            """)
-
         if cond_leak > 0.2:
             st.error("🚨 ВНИМАНИЕ: Приток на сурова/охладителна вода в кондензатора!")
-            st.markdown(f"""
-            * **🔍 Причина:** Пробив в тръбната система на кондензатора (Дебит: `{cond_leak} L/h`).
-            * **💥 Риск:** Внасяне на твърдост и хлориди $\\rightarrow$ питингова корозия по ПГ.
-            * **🛠️ Препоръка към оператора:** Увеличете дозата на ЕТА, форсирайте продухването на ПГ и задействайте БОВ.
-            """)
-
         if effective_o2 > 5.0 and not is_emergency_scram:
             st.warning("⚠️ ПРЕДУПРЕПРЕЖДЕНИЕ: Повишен разтворен Кислород (O2)!")
-            st.markdown(f"""
-            * **🔍 Причина:** Недостатъчен водороден покрив (`H2 = {h2_input:.1f} Ncm³/kg`).
-            * **💥 Риск:** Корозионно напукване под напрежение (SCC) на аустенитната стомана.
-            * **🛠️ Препоръка към оператора:** Увеличете дозирането на $NH_3$ или $H_2$.
-            """)
-
         if (ph_t_p1 < 7.00 or ph_t_p1 > 7.30) and not is_emergency_scram:
             st.warning("⚠️ ПРЕДУПРЕЖДЕНИЕ: Отклонение от Борно-Калиевия график!")
-            st.markdown(f"""
-            * **🔍 Причина:** Несъответствие между Борна киселина (`{h3bo3} g/kg`) и Калий (`{k_mg} mg/dm³`).
-            * **💥 Риск:** Образуване на CRUD отлагания по обвивките на ТВЕЛ-ите.
-            * **🛠️ Препоръка към оператора:** Коригирайте $KOH$, за да поддържате $pH_T$ в границите $7.10 - 7.20$.
-            """)
     else:
         st.success("✅ Всички параметри са в ЗЕЛЕН СТАТУС. Спазва се Технологичният регламент на Блок 5.")
 
 # ==========================================================
-# МОДУЛ 2: РАЗШИРЕНА ЛАБОРАТОРИЯ С ДЕТАЙЛЕН НАУЧЕН ПАСПОРТ
+# МОДУЛ 2: ЛАБОРАТОРИЯ (ДИНАМИЧНА ЗА ВСИЧКИ СТОМАНИ)
 # ==========================================================
 elif module == "2. Лаборатория за корозионни изпитания & Пасивация":
     st.header("🔬 Модул 2: Разширена лаборатория за корозия, хидродинамика и пасивация")
-    st.caption("Физикохимичен симулатор за устойчивост на конструкционни стомани от ВВЕР-1000")
+    st.caption("Динамичен физикохимичен симулатор за устойчивост на конструкционни стомани")
 
     # --- 1. Избор на материал ---
     st.subheader("⚙️ 1. Избор на конструкционен материал / стомана")
@@ -188,70 +162,70 @@ elif module == "2. Лаборатория за корозионни изпита
     with col_m3:
         velocity = st.slider("Скорост на флуида v (m/s)", 0.0, 10.0, 2.0, 0.1)
 
-    # --- НАУЧНО-ФИЗИКОХИМИЧЕН ПАСПОРТ И АРГУМЕНТАЦИЯ ---
+    # --- НАУЧЕН ПАСПОРТ (ДИНАМИЧНА БАЗА ДАННИ) ---
     scientific_passport = {
         "Аустенитна стомана 08Х18Н10Т (Първи контур / ПГ)": {
             "composition": "Fe-Cr18-Ni10-Ti0.5",
             "film": "Хромов оксид (Cr₂O₃) / Fe-Cr шпинел",
-            "ph_optimum": "pH 6.8 - 7.4 (при работна температура) / pH 9.0-10.5 при 25°C",
-            "temp_limit": "До 350°C (Отлична устойчивост в 1-ви контур)",
-            "hydrodynamics": "Подходяща за високоскоростен воден поток. Не е чувствителна към FAC.",
-            "keller_fac": "НЕ Е ПРИЛОЖИМ (Високо съдържание на Chromium Cr > 13% напълно блокира FAC).",
-            "pitting_scc_risk": "Висок риск от SCC при комбинация от Cl- > 50 ppb, O2 > 10 ppb и T > 150°C."
+            "ph_optimum": "pH 6.8 - 7.4 (работна Т) / pH 9.0-10.5 (25°C)",
+            "temp_limit": "До 350°C",
+            "hydrodynamics": "Устойчива при високи скорости. Имунна срещу FAC.",
+            "keller_fac": "НЕ Е ПРИЛОЖИМ (Cr > 13%).",
+            "pitting_scc_risk": "Чувствителна към Cl- > 30 ppb и O2 > 10 ppb."
         },
         "Аустенитна стомана 12Х18Н10Т (Спомагателни системи)": {
             "composition": "Fe-Cr18-Ni10-Ti0.7",
             "film": "Хромов оксид (Cr₂O₃)",
             "ph_optimum": "pH 7.0 - 10.5",
             "temp_limit": "До 350°C",
-            "hydrodynamics": "Стабилна при бърз и бавен поток. По-високо съдържание на въглерод/титан спрямо 08Х18Н10Т.",
+            "hydrodynamics": "Стабилна при бърз и бавен поток.",
             "keller_fac": "НЕ Е ПРИЛОЖИМ (Cr > 13%).",
-            "pitting_scc_risk": "Уязвима към междукристална корозия (МКК) при заварени съединения без подходящо пасивиране."
+            "pitting_scc_risk": "Риск от междукристална корозия при заварки."
         },
         "Аустенитна стомана AISI 316L / 03Х17Н14М3 (Модернизирани възели)": {
             "composition": "Fe-Cr17-Ni12-Mo2.5",
             "film": "Пасивационен филм (Cr₂O₃ + MoO₃)",
-            "ph_optimum": "Широк спектър: pH 5.0 - 11.0",
+            "ph_optimum": "pH 5.0 - 11.0",
             "temp_limit": "До 400°C",
-            "hydrodynamics": "Отлична за агресивни среда и висока скорост.",
+            "hydrodynamics": "Отлична за агресивни флуиди и висока скорост.",
             "keller_fac": "НЕ Е ПРИЛОЖИМ (Cr > 13%).",
-            "pitting_scc_risk": "Много нисък! Молибденът (Mo 2.5%) драстично повишава устойчивостта срещу питинг от хлориди."
+            "pitting_scc_risk": "Много нисък (Mo повишава устойчивостта срещу питинг)."
         },
         "Перлитна стомана 15Х2МФА / 15Х2НМФА (Корпус на Реактора)": {
             "composition": "Fe-Cr2.5-Mo0.6-V0.3",
-            "film": "Магнетитен оксиден слой (Fe₃O₄)",
-            "ph_optimum": "pH 9.2 - 10.0 (при 25°C) за минимална разтворимост на магнетита",
-            "temp_limit": "До 320°C (Работи под защитен вътрешен аустенитен наплав)",
-            "hydrodynamics": "Изисква ниска скорост или защита от наплав. Уязвима при ниско pH.",
-            "keller_fac": "ЧАСТИЧНО ПРИЛОЖИМ. Нисък Cr (2.5%) намалява FAC, но не го елиминира напълно без наплав.",
-            "pitting_scc_risk": "Нисък питинг риск, но висок риск от обща корозия и флуенсно/радиационно стареене."
+            "film": "Магнетит (Fe₃O₄)",
+            "ph_optimum": "pH 9.2 - 10.0 (при 25°C)",
+            "temp_limit": "До 320°C (Работи със защитен аустенитен наплав)",
+            "hydrodynamics": "Изисква защита от наплава при високи скорости.",
+            "keller_fac": "ЧАСТИЧНО ПРИЛОЖИМ (Нисък Cr = 2.5%).",
+            "pitting_scc_risk": "Нисък питинг, риск от обща корозия и флуенсно стареене."
         },
         "Въглеродна стомана 20К / 16ГС (Втори контур / Тръбопроводи)": {
             "composition": "Fe-C0.2 (Без Cr и Ni)",
-            "film": "Магнетит (Fe₃O₄) — податлив на разтваряне при pH < 9.0",
-            "ph_optimum": "pH 9.2 - 9.8 (Строго задължително алкално pH за втория контур!)",
-            "temp_limit": "Оптимум до 250°C. При T=150-180°C е максимумът на FAC!",
-            "hydrodynamics": "Силно чувствителна към скорост и турбулентност! Риск от отмиване на магнетита.",
-            "keller_fac": "СИЛНО ПРИЛОЖИМ МОДЕЛ НА КЕЛЕР! Скоростта на FAC зависи от $v^{0.8}$, T, pH и влажността на парата.",
-            "pitting_scc_risk": "Уязвима към бърза обща корозия и ерозионно износване при влажна пара (Двуфазен поток)."
+            "film": "Магнетит (Fe₃O₄) — бързо се разтваря при pH < 9.0",
+            "ph_optimum": "pH 9.2 - 9.8 (Алкален режим)",
+            "temp_limit": "До 250°C (Максимум на FAC при T=150-180°C)",
+            "hydrodynamics": "Изключително уязвима при v > 2.5 m/s!",
+            "keller_fac": "СИЛНО ПРИЛОЖИМ МОДЕЛ НА КЕЛЕР! Риск от ерозия-корозия.",
+            "pitting_scc_risk": "Бърза обща корозия при ниско pH и влошен двуфазен поток."
         },
         "Никелова сплав Инконел-690 (Тръбички ПГ)": {
             "composition": "Ni58-Cr30-Fe9",
             "film": "Високоплътен Ni-Cr шпинел",
-            "ph_optimum": "Изключително широк диапазон (pH 4.0 - 11.5)",
-            "temp_limit": "Над 350°C (Еталон за парогенераторни тръби)",
-            "hydrodynamics": "Перфектна за високоскоростна топла вода и пара.",
-            "keller_fac": "НЕ Е ПРИЛОЖИМ (Напълно имунна към FAC).",
-            "pitting_scc_risk": "Изключително нисък (Модернизация спрямо по-стария Инконел-600)."
+            "ph_optimum": "pH 4.0 - 11.5",
+            "temp_limit": "Над 350°C",
+            "hydrodynamics": "Идеална за турбулентна гореща вода и пара.",
+            "keller_fac": "НЕ Е ПРИЛОЖИМ (Пълна имунност).",
+            "pitting_scc_risk": "Изключително нисък."
         },
         "Циркониева сплав Э110 / Э635 (Обвивки на ТВЕЛ)": {
             "composition": "Zr-Nb1.0%",
             "film": "Циркониев диоксид (ZrO₂)",
-            "ph_optimum": "pH 6.8 - 7.3 (при работна T) с контролиран Lithium/Potassium",
-            "temp_limit": "До 350°C при нормална експлоатация (При T > 900°C започва пароциркониева реакция!)",
-            "hydrodynamics": "Оптимизирана за протичане на топлоносителя в активната зона.",
+            "ph_optimum": "pH 6.8 - 7.3 (при работна Т)",
+            "temp_limit": "До 350°C (При T > 900°C — пароциркониева реакция)",
+            "hydrodynamics": "Оптимизирана за протичане в активната зона.",
             "keller_fac": "НЕ Е ПРИЛОЖИМ.",
-            "pitting_scc_risk": "Уязвима към водородна трошливост (образуване на Zr-хидриди) при H2 > 60 Ncm³/kg."
+            "pitting_scc_risk": "Риск от водородна трошливост при H2 > 60 Ncm³/kg."
         }
     }
 
@@ -278,11 +252,11 @@ elif module == "2. Лаборатория за корозионни изпита
     cl_conc = fc4.number_input("Хлориди Cl- (ppb)", 0, 1000, 2)
     h2_conc = fc5.number_input("Разтворен H2 (Ncm³/kg)", 0, 100, 45)
 
-    # --- Изчисления и физикохимична диагностика ---
+    # --- ДИНАМИЧНО ПРЕИЗЧИСЛЯВАНЕ ЗА ВСЯКА СТОМАНА В РЕАЛНО ВРЕМЕ ---
     corrosion_mechanism = []
     initial_wall_thickness = 1.5 if "ПГ" in metal or "ТВЕЛ" in metal else 8.0
 
-    # Фактор от скорост
+    # Фактор на скоростта (Модел на Келер)
     if velocity < 0.2:
         flow_factor = 1.0
         corrosion_mechanism.append("Утайки/Застой: Риск от подшламова корозия")
@@ -291,111 +265,159 @@ elif module == "2. Лаборатория за корозионни изпита
     else:
         flow_factor = 1.0 + (velocity / 2.5) ** 1.6
         if "Въглеродна" in metal or "Перлитна" in metal:
-            corrosion_mechanism.append(f"Висока скорост ({velocity} m/s) $\\rightarrow$ Модел на Келер: Интензивен FAC!")
+            corrosion_mechanism.append(f"Висока скорост ({velocity} m/s) ➔ Келер FAC: Интензивно отмиване на магнетита!")
 
-    # Изчисляване на база сплав
-    if "Въглеродна" in metal or "Перлитна" in metal:
+    # 1. ВЪГЛЕРОДНА СТОМАНА (20К / 16ГС)
+    if "Въглеродна" in metal:
         base_rate = 0.02 * np.exp((work_temp - 100) / 110) * flow_factor
-        
-        if ph_val < 9.0:
-            base_rate *= (9.2 / ph_val) ** 2.8
-            corrosion_mechanism.append("Киселинно разтваряне на магнетитния филм (Отклонение от Поурбе)")
+        if ph_val < 9.2:
+            base_rate *= (9.2 / ph_val) ** 3.0
+            corrosion_mechanism.append("Киселинно разтваряне на магнетитния слой (pH < 9.2)")
         elif ph_val > 10.2:
             base_rate *= (ph_val / 9.5) ** 1.8
             corrosion_mechanism.append("Алкална корозия (Образуване на разтворими ферати)")
-
-        if o2_conc > 30:
-            base_rate *= (1.0 + o2_conc / 35.0)
+        if o2_conc > 20:
+            base_rate *= (1.0 + o2_conc / 20.0)
             corrosion_mechanism.append("Кислородна деполяризация")
 
         if ph_val >= 9.2 and ph_val <= 9.8 and o2_conc <= 20 and velocity <= 2.5 and "Двуфазен" not in fluid:
-            passivated = True
+            status = "GREEN"
             film_type = "Стабилен магнетитен защитен филм (Fe₃O₄)"
             film_stability = max(10, min(100, int(98 - abs(9.5 - ph_val)*30 - velocity*5)))
+        elif ph_val < 8.5 or velocity > 3.5 or o2_conc > 50:
+            status = "RED"
+            film_type = "Разрушен / Разтворен магнетитен филм"
+            film_stability = max(5, int(35 - abs(9.5 - ph_val)*15 - velocity*8))
         else:
-            passivated = False
-            film_type = "Ронлив / Частично отмит магнетитен филм"
-            film_stability = max(5, int(45 - abs(9.5 - ph_val)*15 - velocity*8))
+            status = "YELLOW"
+            film_type = "Уязвим / Ччастично нестабилен магнетит"
+            film_stability = max(20, int(65 - abs(9.5 - ph_val)*20 - velocity*6))
 
+    # 2. ПЕРЛИТНА СТОМАНА (15Х2МФА)
+    elif "Перлитна" in metal:
+        base_rate = 0.012 * np.exp((work_temp - 100) / 130) * (flow_factor ** 0.8)
+        if ph_val < 9.0:
+            base_rate *= (9.0 / ph_val) ** 2.2
+            corrosion_mechanism.append("Повишена разтворимост на магнетита при ниско pH")
+        
+        if ph_val >= 9.0 and ph_val <= 10.0 and velocity <= 3.0:
+            status = "GREEN"
+            film_type = "Защитен магнетитен слой (Fe₃O₄)"
+            film_stability = max(10, min(100, int(95 - velocity*4)))
+        elif ph_val < 8.0 or velocity > 4.5:
+            status = "RED"
+            film_type = "Частично отмит магнетит"
+            film_stability = max(10, int(40 - velocity*6))
+        else:
+            status = "YELLOW"
+            film_type = "Отслабен пасивационен слой"
+            film_stability = max(20, int(70 - velocity*5))
+
+    # 3. АУСТЕНИТНИ СТОМАНИ (08Х18Н10Т / 12Х18Н10Т / AISI 316L)
     elif "Аустенитна" in metal:
         base_rate = 0.001 * np.exp((work_temp - 100) / 210) * (flow_factor ** 0.3)
-        pitting_sens = 0.2 if "316L" in metal else 0.5
+        pitting_sens = 0.15 if "316L" in metal else 0.45
 
-        if cl_conc > 30 and o2_conc > 10 and work_temp > 140:
-            pitting_factor = 1.0 + (cl_conc / 30.0) * (o2_conc / 10.0) * pitting_sens
+        if cl_conc > 30 or o2_conc > 10:
+            pitting_factor = 1.0 + (cl_conc / 25.0) * (o2_conc / 10.0) * pitting_sens
             base_rate *= pitting_factor
-            corrosion_mechanism.append("Питингова корозия и риск от Кор. Напукване под Напрежение (SCC)")
+            corrosion_mechanism.append("Риск от Питингова корозия и Напукване под Напрежение (SCC)")
 
-        if h2_conc >= 30:
-            base_rate *= 0.65
-            corrosion_mechanism.append("Водородно инхибиране на радиолизата")
+        if cl_conc <= 30 and o2_conc <= 10 and ph_val >= 6.5:
+            status = "GREEN"
+            film_type = "Плътен Хромов Оксиден слой (Cr₂O₃ / Fe-Cr Шпинел)"
+            film_stability = max(20, min(100, int(99 - (cl_conc / 15) - (o2_conc / 5))))
+        elif cl_conc > 100 or (cl_conc > 50 and o2_conc > 20):
+            status = "RED"
+            film_type = "Пробит пасивационен филм (Питинги)"
+            film_stability = max(5, int(40 - (cl_conc / 10)))
+        else:
+            status = "YELLOW"
+            film_type = "Уязвим за питинг пасивационен филм"
+            film_stability = max(15, int(70 - (cl_conc / 12)))
 
-        passivated = True
-        film_type = "Плътен Хромов Оксиден слой (Cr₂O₃ / Fe-Cr Шпинел)"
-        film_stability = max(15, min(100, int(99 - (cl_conc / 20) - (o2_conc / 8))))
-
+    # 4. ИНКОНЕЛ-690
     elif "Инконел-690" in metal:
         base_rate = 0.00025 * np.exp((work_temp - 100) / 260)
-        passivated = True
-        film_type = "Ултра-стабилен Ni-Cr шпинелен оксид"
-        film_stability = max(60, min(100, int(100 - (cl_conc / 50))))
+        if cl_conc > 200:
+            corrosion_mechanism.append("Минимална повърхностна уязвимост при екстремни хлориди")
 
-    else: # Цирконий Э110
+        if cl_conc <= 300:
+            status = "GREEN"
+            film_type = "Ултра-стабилен Ni-Cr шпинелен оксид"
+            film_stability = max(60, min(100, int(100 - (cl_conc / 40))))
+        else:
+            status = "YELLOW"
+            film_type = "Леко уязвим Ni-Cr шпинел"
+            film_stability = 75
+
+    # 5. ЦИРКОНИЕВА СПЛАВ (Э110)
+    else:
         base_rate = 0.0007 * np.exp((work_temp - 200) / 105)
         if work_temp > 330:
-            base_rate *= 2.2
-            corrosion_mechanism.append("Ускорена Нодуларна корозия")
+            base_rate *= 2.0
+            corrosion_mechanism.append("Ускорена Нодуларна корозия (Т > 330°C)")
         if h2_conc > 60:
             corrosion_mechanism.append("Водородна трошливост (Образуване на Zr-хидриди)")
 
-        passivated = True
-        film_type = "Пасивационен филм ZrO₂"
-        film_stability = max(20, min(100, int(95 - (work_temp - 300)*0.5)))
+        if work_temp <= 330 and h2_conc <= 60:
+            status = "GREEN"
+            film_type = "Пасивационен филм ZrO₂"
+            film_stability = max(20, min(100, int(96 - (work_temp - 300)*0.5)))
+        elif work_temp > 345 or h2_conc > 80:
+            status = "RED"
+            film_type = "Деградирал ZrO₂ филм / Хидриране"
+            film_stability = 35
+        else:
+            status = "YELLOW"
+            film_type = "Уязвим ZrO₂ филм"
+            film_stability = 65
 
     if not corrosion_mechanism:
-        corrosion_mechanism.append("Нормален пасивен режим с незначително оксидиране")
+        corrosion_mechanism.append("Оптимален пасивен режим с минимално оксидиране")
 
     allowable_thinning = initial_wall_thickness * 0.20
     estimated_lifespan_years = allowable_thinning / max(base_rate, 1e-6)
 
-    # --- 3. Резултати ---
+    # --- 3. РЕЗУЛТАТИ И ДИНАМИЧЕН ИНДИКАТОР ---
     st.markdown("---")
-    st.subheader("📊 3. Резултати и Инженерни Аргументи")
+    st.subheader("📊 3. Динамични резултати и Инженерни Аргументи")
 
     r1, r2, r3, r4 = st.columns(4)
     r1.metric("Скорост на корозия", f"{base_rate:.4f} mm/година")
     
-    if passivated and film_stability > 70:
-        r2.success("🛡️ ПАСИВИРАН СТАТУС")
-    elif passivated:
-        r2.warning("⚠️ УЯЗВИМ ПАСИВЕН СЛОЙ")
+    # Динамично светване в Зелено / Жълто / Червено
+    if status == "GREEN":
+        r2.success("🟢 ПАСИВИРАН / БЕЗОПАСЕН")
+    elif status == "YELLOW":
+        r2.warning("🟡 УЯЗВИМ / ВНИМАНИЕ")
     else:
-        r2.error("💥 АКТИВНА КОРОЗИЯ / FAC")
+        r2.error("🔴 АКТИВНА КОРОЗИЯ / ОПАСНОСТ")
 
     r3.metric("Стабилност на филма", f"{film_stability}%")
-    r4.metric("Прогнозен остатъчен ресурс", f"{estimated_lifespan_years:.1f} години", f"За марж {allowable_thinning:.2f} mm")
+    r4.metric("Прогнозен остатъчен ресурс", f"{estimated_lifespan_years:.1f} години", f"Марж: {allowable_thinning:.2f} mm")
 
-    # Текстова аргументация на състоянието
-    st.markdown("#### 💡 Аргументи за получения статус:")
-    if passivated and film_stability > 70:
-        st.success(f"**Научна подкрепа:** Условията (pH={ph_val}, T={work_temp}°C, v={velocity}m/s) съответстват на термодинамичната стабилност на `{film_type}`. Пасивният слой е плътен и предпазва основния метал.")
-    elif passivated:
-        st.warning(f"**Научна подкрепа:** Слой `{film_type}` е налице, но е уязвим заради високи хлориди ({cl_conc} ppb), кислород ({o2_conc} ppb) или температура. Налице е риск от локален питинг.")
+    # Динамична научна аргументация спрямо параметрите
+    st.markdown("#### 💡 Научно-физикохимична аргументация за текущия статус:")
+    if status == "GREEN":
+        st.success(f"**Научна подкрепа (ЗЕЛЕН СТАТУС):** Избраните параметри (pH={ph_val}, T={work_temp}°C, v={velocity}m/s, Cl-={cl_conc}ppb) попадат изцяло в зоната на термодинамична стабилност на `{film_type}` според Поурбе. Пасивният оксиден слой е с висока плътност и предпазва стоманата.")
+    elif status == "YELLOW":
+        st.warning(f"**Научна подкрепа (ЖЪЛТ СТАТУС):** Налице е граночно отклонение! Слой `{film_type}` започва да губи стабилност поради повишени хлориди/кислород или скорост на потока. Препоръчва се корекция на параметрите, за да се избегне локална корозия.")
     else:
-        st.error(f"**Научна подкрепа:** Термодинамичните условия излизат извън пасивната зона на Поурбе или скоростта ({velocity} m/s) надвишава якостта на оксида (Модел на Келер). Налице е активно разтваряне!")
+        st.error(f"**Научна подкрепа (ЧЕРВЕН СТАТУС):** Термодинамичните условия излизат от зоната на пасивация! Избраната стомана страда от интензивно разтваряне на оксидния слой (или механично отмиване по Модела на Келер при v={velocity}m/s). Скоростта на корозия е критична!")
 
-    st.markdown("#### 🔍 Регистрирани физикохимични механизми:")
+    st.markdown("#### 🔍 Регистрирани физикохимични механизми в реално време:")
     for mech in corrosion_mechanism:
         if "FAC" in mech or "SCC" in mech or "Киселинно" in mech or "Нодуларна" in mech or "трошливост" in mech:
             st.error(f"🚨 **Активен риск:** {mech}")
-        elif "инхибиране" in mech or "Стабилен" in mech:
+        elif "инхибиране" in mech or "Оптимален" in mech:
             st.success(f"✅ **Защитен фактор:** {mech}")
         else:
             st.info(f"ℹ️ **Режим:** {mech}")
 
     # --- 4. Интерактивни графики ---
     st.markdown("---")
-    st.subheader("📈 4. Зависимости на скоростта на корозия")
+    st.subheader("📈 4. Зависимости на скоростта на корозия за избраната стомана")
 
     graph_tab1, graph_tab2, graph_tab3 = st.tabs(["Температурна зависимост", "pH зависимост (Разтворимост)", "Зависимост от Скоростта (v)"])
 
@@ -406,7 +428,7 @@ elif module == "2. Лаборатория за корозионни изпита
         fig_temp = go.Figure()
         fig_temp.add_trace(go.Scatter(x=temp_range, y=rates_t, mode='lines', name='Скорост (mm/год)', line=dict(color='#e74c3c', width=3)))
         fig_temp.add_trace(go.Scatter(x=[work_temp], y=[base_rate], mode='markers', name='Текуща точка', marker=dict(size=14, color='#2ecc71', symbol='diamond')))
-        fig_temp.update_layout(title="Скорост на корозия спрямо Работната температура (°C)", xaxis_title="Температура T (°C)", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
+        fig_temp.update_layout(title=f"Скорост на корозия спрямо T (°C) — {metal}", xaxis_title="Температура T (°C)", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
         st.plotly_chart(fig_temp, use_container_width=True)
 
     with graph_tab2:
@@ -419,7 +441,7 @@ elif module == "2. Лаборатория за корозионни изпита
         fig_ph = go.Figure()
         fig_ph.add_trace(go.Scatter(x=ph_range, y=rates_ph, mode='lines', name='Скорост (mm/год)', line=dict(color='#8e44ad', width=3)))
         fig_ph.add_trace(go.Scatter(x=[ph_val], y=[base_rate], mode='markers', name='Текущо pH', marker=dict(size=14, color='#f1c40f', symbol='star')))
-        fig_ph.update_layout(title="Крива на разтворимост и скорост на корозия спрямо pH (при 25°C)", xaxis_title="pH", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
+        fig_ph.update_layout(title=f"Зависимост от pH — {metal}", xaxis_title="pH", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
         st.plotly_chart(fig_ph, use_container_width=True)
 
     with graph_tab3:
@@ -429,5 +451,5 @@ elif module == "2. Лаборатория за корозионни изпита
         fig_v = go.Figure()
         fig_v.add_trace(go.Scatter(x=v_range, y=rates_v, mode='lines', name='Скорост (mm/год)', line=dict(color='#27ae60', width=3)))
         fig_v.add_trace(go.Scatter(x=[velocity], y=[base_rate], mode='markers', name='Текуща скорост', marker=dict(size=14, color='#3498db', symbol='circle')))
-        fig_v.update_layout(title="Зависимост на корозията/FAC от Скоростта на флуида (m/s)", xaxis_title="Скорост v (m/s)", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
+        fig_v.update_layout(title=f"Зависимост от скоростта v (m/s) — {metal}", xaxis_title="Скорост v (m/s)", yaxis_title="Скорост (mm/година)", height=380, plot_bgcolor="#ffffff")
         st.plotly_chart(fig_v, use_container_width=True)
