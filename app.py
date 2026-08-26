@@ -58,26 +58,26 @@ module = st.sidebar.radio(
 # ==========================================================
 # МОДУЛ 1: ОПЕРАТИВЕН МОНИТОРИНГ И ДИАГНОСТИКА
 # ==========================================================
-if module == "1. Оперативен Мониторинг & Диагностика на Блок 5":
-    st.header("📊 Модул 1: Оперативен мониторинг и диагностика в реално време")
-    st.caption("Мониторинг на Водно-Химичния Режим (ВХР) по съоръжения в Реактор ВВЕР-1000 — Блок 5")
+if module == "1. Оперативен мониторинг & диагностика на енергоблок 5":
+    st.header("Модул 1: Оперативен мониторинг и диагностика в реално време")
+    st.caption("Мониторинг на водохимичния режим (ВХР) по съоръжения в енергоблок 5 (ВВЕР-1000)")
 
     # 🎛️ НАСТРОЙКИ ПО СЪОРЪЖЕНИЯ В СТРАНИЧНОТО МЕНЮ
     st.sidebar.markdown("---")
-    st.sidebar.subheader("⚙️ Управление по съоръжения")
+    st.sidebar.subheader("Управление по съоръжения")
     
     selected_facility = st.sidebar.selectbox(
         "Избери съоръжение за контрол:",
         [
-            "🔥 Реактор ВВЕР-1000 (Активна зона)",
-            "🌀 Главни Циркулационни Помпи (ГЦП & ГЦТ)",
-            "💨 Парогенератори ПГВ-1000 (Втори контур)",
-            "💧 Кондензатор & Турбогенератор"
+            "Реактор ВВЕР-1000 (Активна зона)",
+            "Главни Циркулационни Помпи (ГЦП & ГЦТ)",
+            "Парогенератори ПГВ-1000 (Втори контур)",
+            "Кондензатор & Турбогенератор"
         ]
     )
 
-    if selected_facility == "🔥 Реактор ВВЕР-1000 (Активна зона)":
-        st.sidebar.markdown("#### 🔥 Параметри на Реактора")
+    if selected_facility == " Реактор ВВЕР-1000 (Активна зона)":
+        st.sidebar.markdown("####  Параметри на Реактора")
         st.sidebar.slider("Работна температура Т1 (°C)", 280.0, 325.0, key="temp_val", step=0.5)
         st.sidebar.slider("Борна киселина H3BO3 (g/kg)", 0.0, 10.0, key="h3bo3_val", step=0.1)
         st.sidebar.slider("Калиев йон K+ (mg/dm³)", 0.0, 20.0, key="k_val", step=0.5)
@@ -85,23 +85,23 @@ if module == "1. Оперативен Мониторинг & Диагности�
         st.sidebar.slider("Разтворен Водород H2 (Ncm³/kg)", 0.0, 150.0, key="h2_val", step=1.0)
         st.sidebar.slider("Кислород O2 в Реактора (ppb)", 0.0, 50.0, key="o2_reactor", step=1.0)
 
-    elif selected_facility == "🌀 Главни Циркулационни Помпи (ГЦП & ГЦТ)":
-        st.sidebar.markdown("#### 🌀 Параметри на ГЦП / ГЦТ")
+    elif selected_facility == "Главни Циркулационни Помпи (ГЦП & ГЦТ)":
+        st.sidebar.markdown("#### Параметри на ГЦП / ГЦТ")
         st.sidebar.slider("Общ дебит на ГЦП Q (m³/h)", 0.0, 90000.0, key="flow_gcp", step=1000.0)
         st.sidebar.info("Забележка: Номинален дебит за 4 помпи ГЦН-195М: ~84,000 m³/h.")
 
-    elif selected_facility == "💨 Парогенератори ПГВ-1000 (Втори контур)":
-        st.sidebar.markdown("#### 💨 Параметри на Парогенераторите")
+    elif selected_facility == "Парогенератори ПГВ-1000 (Втори контур)":
+        st.sidebar.markdown("#### Параметри на Парогенераторите")
         st.sidebar.slider("Натриеви йони Na+ (ppb)", 0.0, 50.0, key="na_sg", step=0.5)
         st.sidebar.slider("Хлориди Cl- (ppb)", 0.0, 50.0, key="cl_sg", step=0.5)
         st.sidebar.slider("Разтворен O2 в продухването (ppb)", 0.0, 20.0, key="o2_sg", step=0.5)
 
-    elif selected_facility == "💧 Кондензатор & Турбогенератор":
-        st.sidebar.markdown("#### 💧 Параметри на Кондензатора")
+    elif selected_facility == "Кондензатор & Турбогенератор":
+        st.sidebar.markdown("#### Параметри на Кондензатора")
         st.sidebar.slider("Дозиране на ЕТА (mg/dm³)", 0.0, 5.0, key="eta_val", step=0.1)
         st.sidebar.slider("Приток на охладителна вода (L/h)", 0.0, 10.0, key="leak_val", step=0.1)
 
-    # 🧮 ТЕХНОЛОГИЧНИ ПРЕСМЯТАНИЯ
+    #  ТЕХНОЛОГИЧНИ ПРЕСМЯТАНИЯ
     ph_25_p1 = 7.0 + 0.12 * st.session_state.k_val - 0.08 * st.session_state.h3bo3_val
     ph_t_p1 = ph_25_p1 - (st.session_state.temp_val - 25.0) * 0.0072
     effective_o2 = max(0.0, st.session_state.o2_reactor - (st.session_state.h2_val / 10.0))
@@ -122,18 +122,18 @@ if module == "1. Оперативен Мониторинг & Диагности�
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.info(f"**🔥 Реактор ВВЕР-1000**\n\nСтатус: **{st1}**\n\nТ: `{st.session_state.temp_val}°C` | $pH_T$: `{ph_t_p1:.2f}`\n\n$H_2$: `{st.session_state.h2_val} Ncm³/kg`")
+        st.info(f"**Реактор ВВЕР-1000**\n\nСтатус: **{st1}**\n\nТ: `{st.session_state.temp_val}°C` | $pH_T$: `{ph_t_p1:.2f}`\n\n$H_2$: `{st.session_state.h2_val} Ncm³/kg`")
     with c2:
-        st.info(f"**🌀 ГЦП & Контур**\n\nСтатус: **{st2}**\n\nДебит $Q$: `{st.session_state.flow_gcp:.0f} m³/h`\n\nНалягане $P$: `15.7 MPa`")
+        st.info(f"**ГЦП & Контур**\n\nСтатус: **{st2}**\n\nДебит $Q$: `{st.session_state.flow_gcp:.0f} m³/h`\n\nНалягане $P$: `15.7 MPa`")
     with c3:
-        st.info(f"**💨 Парогенератори (4x)**\n\nСтатус: **{st3}**\n\n$Na^+$: `{st.session_state.na_sg} ppb` | $Cl^-$: `{st.session_state.cl_sg} ppb`\n\n$O_2$: `{st.session_state.o2_sg} ppb`")
+        st.info(f"**Парогенератори (4x)**\n\nСтатус: **{st3}**\n\n$Na^+$: `{st.session_state.na_sg} ppb` | $Cl^-$: `{st.session_state.cl_sg} ppb`\n\n$O_2$: `{st.session_state.o2_sg} ppb`")
     with c4:
-        st.info(f"**💧 Кондензатор & ЕТА**\n\nСтатус: **{st4}**\n\nДозиране ЕТА: `{st.session_state.eta_val} mg/dm³`\n\nПриток: `{st.session_state.leak_val} L/h`")
+        st.info(f"**Кондензатор & ЕТА**\n\nСтатус: **{st4}**\n\nДозиране ЕТА: `{st.session_state.eta_val} mg/dm³`\n\nПриток: `{st.session_state.leak_val} L/h`")
 
     st.markdown("---")
 
     # --- 2. ДИНАМИЧНО СЪОБЩЕНИЕ И ПРЕПОРЪКА КЪМ ОПЕРАТОРА (ALERT BOX) ---
-    st.subheader("🚨 Оперативна диагностика & Препоръка към оператора")
+    st.subheader("Оперативна диагностика & Препоръка към оператора")
     
     has_any_issue = is_emergency_scram or has_condenser_leak or has_sg_impurity or has_ph_anomaly or effective_o2 > 5.0
 
@@ -141,7 +141,7 @@ if module == "1. Оперативен Мониторинг & Диагности�
         st.error("⚠️ РЕГИСТРИРАНО ОТКЛОНЕНИЕ ОТ ЕКСПЛОАТАЦИОННИЯ РЕГЛАМЕНТ!")
         
         if is_emergency_scram:
-            st.critical("💥 **КРИТИЧЕН АВАРИЕН РЕЖИМ — СРАБОТВАНЕ НА АВАРИЙНАТА ЗАЩИТА (ААЗ)!**")
+            st.critical("**КРИТИЧЕН АВАРИЕН РЕЖИМ — СРАБОТВАНЕ НА АВАРИЙНАТА ЗАЩИТА (ААЗ)!**")
             st.markdown("""
             * **Къде:** Първи контур / Активна зона и ГЦТ.
             * **Какво:** Опасно повишаване на водорода ($H_2 > 100\\text{ Ncm}^3/\\text{kg}$) или срив в дебита на циркулационните помпи ($Q < 40,000\\text{ m}^3/\\text{h}$).
@@ -173,7 +173,7 @@ if module == "1. Оперативен Мониторинг & Диагности�
             * **Препоръка:** Коригирайте дозирането на калиева основа ($K^+$) спрямо текущата концентрация на борна киселина.
             """)
 
-        st.button("🤖 Автоматично възстановяване на оптимален ВХР (Auto-Fix)", on_click=apply_auto_fix)
+        st.button("Автоматично възстановяване на оптимален ВХР (Auto-Fix)", on_click=apply_auto_fix)
     else:
         st.success("✅ Всички химически и хидродинамични параметри са в **ОПТИМАЛЕН ЗЕЛЕН СТАТУС**. Енергоблок 5 работи при 100% номинална мощност.")
 
@@ -249,7 +249,7 @@ if module == "1. Оперативен Мониторинг & Диагности�
         st.plotly_chart(fig_reg, use_container_width=True)
 
     # Оперативен дневник
-    with st.expander("📜 Оперативен хронологичен журнал на системата (Log)"):
+    with st.expander("Оперативен хронологичен журнал на системата (Log)"):
         now_str = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         st.code(f"""
 [{now_str}] INFO: Модул 1 "Дигитален Двойник" функционира в реално време.
@@ -350,15 +350,15 @@ elif module == "2. Лаборатория: Корозия, Питинг & Ора
         }
     }
 
-    st.subheader("🧪 1. Избор на материал и физикохимична среда")
+    st.subheader("1. Избор на материал и физикохимична среда")
     
     col_eq1, col_eq2 = st.columns(2)
     with col_eq1:
         equipment_type = st.selectbox(
             "Тип съоръжение / конструктивен елемент:",
             [
-                "🚀 Тръбопровод (напр. Главна циркулационна контура ГЦТ, Паропровод)",
-                "🧪 Цилиндричен съд под налягане (напр. Компенсатор на налягането, Парогенератор)"
+                "Тръбопровод (напр. Главна циркулационна контура ГЦТ, Паропровод)",
+                "Цилиндричен съд под налягане (напр. Компенсатор на налягането, Парогенератор)"
             ]
         )
     with col_eq2:
@@ -381,7 +381,7 @@ elif module == "2. Лаборатория: Корозия, Питинг & Ора
             st.markdown(f"**Работно налягане (P):** `{selected_info['p_range']}`")
         st.caption(f"**Предназначение и особености:** {selected_info['desc']}")
 
-    st.markdown("##### 🧪 Задаване на химическите агресори и работната среда")
+    st.markdown("##### Задаване на химическите агресори и работната среда")
     hc1, hc2, hc3, hc4 = st.columns(4)
     ph_val = hc1.slider("pH (при 25°C)", 4.0, 11.5, 9.2, 0.1)
     o2_conc = hc2.number_input("Разтворен O2 (ppb)", 0, 500, 5)
@@ -391,7 +391,7 @@ elif module == "2. Лаборатория: Корозия, Питинг & Ора
     allowable_stress_db = {k: v["sigma_dov"] for k, v in metal_info_db.items()}
 
     st.markdown("---")
-    st.subheader("📐 2. Геометрични параметри, налягане и ресурсен анализ")
+    st.subheader("2. Геометрични параметри, налягане и ресурсен анализ")
     
     gc1, gc2, gc3 = st.columns(3)
     pressure_bar = gc1.slider("Работно налягане P (bar)", 1.0, 180.0, 157.0, 1.0)
